@@ -1,4 +1,5 @@
 import csv
+import os
 import random
 import sys
 
@@ -21,7 +22,11 @@ def main(num_samples=100, seed=None):
     if seed is not None:
         random.seed(seed)
     
-    with open('questions.csv', 'w', newline='') as csvfile:
+    # Get the directory where this script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    csv_path = os.path.join(script_dir, 'questions.csv')
+    
+    with open(csv_path, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['index', 'input', 'expected_output', 'private'])
         

@@ -1,11 +1,11 @@
 import csv
+import os
 import random
 import sys
 
 def generate_test_case(index):
     grid = [[random.randint(1, 10) for _ in range(5)] for _ in range(5)]
     numbers = [grid[0][0], grid[0][1], grid[0][2], grid[0][3], grid[0][4], grid[1][4], grid[2][4], grid[3][4], grid[4][4], grid[4][3], grid[4][2], grid[4][1], grid[4][0], grid[3][0], grid[2][0], grid[1][0], grid[1][1], grid[1][2], grid[1][3], grid[2][3], grid[3][3], grid[3][2], grid[3][1], grid[2][1], grid[2][2]]
-    print(len(numbers))
 
     return {
         "input": '\n'.join(' '.join(map(str, row)) for row in grid),
@@ -17,7 +17,11 @@ def main(num_samples=100, seed=None):
     if seed is not None:
         random.seed(seed)
     
-    with open('questions.csv', 'w', newline='') as csvfile:
+    # Get the directory where this script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    csv_path = os.path.join(script_dir, 'questions.csv')
+    
+    with open(csv_path, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['index', 'input', 'expected_output', 'private'])
         
