@@ -5,13 +5,13 @@ import sys
 import os
 
 def main():
-    if not os.path.exists("positions.csv"):
-        print("Error: positions.csv not found. Run 03_select_simple.py first.", file=sys.stderr)
+    if not os.path.exists("output/positions.csv"):
+        print("Error: output/positions.csv not found. Run 03_select.py first.", file=sys.stderr)
         sys.exit(1)
     
     # Read positions
     positions = []
-    with open("positions.csv", 'r') as f:
+    with open("output/positions.csv", 'r') as f:
         reader = csv.DictReader(f)
         for row in reader:
             positions.append(row)

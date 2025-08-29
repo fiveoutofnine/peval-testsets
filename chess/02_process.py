@@ -181,8 +181,8 @@ def create_database(db_path: str):
 
 
 def main():
-    pgn_file = "games.pgn"
-    db_file = "games.db"
+    pgn_file = "games.pgn"  # Keep source file in root
+    db_file = "output/games.db"
     
     # Check if PGN file exists
     if not os.path.exists(pgn_file):

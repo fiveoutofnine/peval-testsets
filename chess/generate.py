@@ -82,24 +82,24 @@ def main():
         print("✓ Step 1: Fetch games - games.pgn already exists")
     
     # Step 2: Process and filter games
-    if not run_step("Step 2: Process games", "02_process.py", ["games.db"]):
+    if not run_step("Step 2: Process games", "02_process.py", ["output/games.db"]):
         print("\nPipeline stopped at Step 2")
         sys.exit(1)
     
     # Step 3: Select positions
-    if not run_step("Step 3: Select positions", "03_select.py", ["positions.csv"]):
+    if not run_step("Step 3: Select positions", "03_select.py", ["output/positions.csv"]):
         print("\nPipeline stopped at Step 3")
         sys.exit(1)
     
     print("\n" + "=" * 50)
     print("✓ Pipeline complete!")
     print("\nOutput files:")
-    print("  - games.db: Filtered games database")
-    print("  - positions.csv: Selected chess positions (intermediate format)")
+    print("  - output/games.db: Filtered games database")
+    print("  - output/positions.csv: Selected chess positions (intermediate format)")
     
     # Show summary statistics
-    if os.path.exists("positions.csv"):
-        with open("positions.csv") as f:
+    if os.path.exists("output/positions.csv"):
+        with open("output/positions.csv") as f:
             line_count = sum(1 for _ in f) - 1  # Subtract header
         print(f"\nTotal positions selected: {line_count}")
         

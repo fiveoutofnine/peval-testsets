@@ -18,7 +18,7 @@ STOCKFISH_PATH = "stockfish"  # Assumes stockfish is in PATH
 STOCKFISH_DEPTH = 12
 MULTI_PV = 4
 SALT = "chess_position_salt_v1"
-OUTPUT_CSV = "positions.csv"
+OUTPUT_CSV = "output/positions.csv"
 
 # ELO buckets: [0, 1400), [1400, 1800), [1800, 2200), [2200, 2600), [2600, inf)
 ELO_RANGES = [(0, 1400), (1400, 1800), (1800, 2200), (2200, 2600), (2600, 9999)]
@@ -307,8 +307,8 @@ def sample_position_from_game(conn: sqlite3.Connection, game_id: str, moves_uci:
 
 
 def main():
-    if not os.path.exists("games.db"):
-        print("Error: games.db not found. Run 02_process.py first.", file=sys.stderr)
+    if not os.path.exists("output/games.db"):
+        print("Error: output/games.db not found. Run 02_process.py first.", file=sys.stderr)
         sys.exit(1)
     
     # Initialize engine
@@ -319,7 +319,7 @@ def main():
         print("Make sure Stockfish is installed and in your PATH, or update STOCKFISH_PATH.", file=sys.stderr)
         sys.exit(1)
     
-    conn = sqlite3.connect("games.db")
+    conn = sqlite3.connect("output/games.db")
     
     # Track selected positions by category
     # Structure: selected[elo_bucket][phase][type][color] = [positions]

@@ -28,24 +28,17 @@ env/
 *~
 .DS_Store
 
-# Project specific
-*.pgn
-*.db
-*.db-journal
-*.sqlite
-*.sqlite3
-.claude
-*.csv
+# Chess competition specific
+games.pgn
+/chess/output/
 !questions.csv
 
 # Stockfish
 stockfish*
 Stockfish*
 
-# Output files
-positions/
-output/
-results/
+# Claude
+.claude
 
 # Temporary files
 *.tmp
