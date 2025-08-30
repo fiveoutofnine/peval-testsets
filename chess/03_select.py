@@ -15,7 +15,7 @@ import json
 
 # Configuration
 STOCKFISH_PATH = "stockfish"  # Assumes stockfish is in PATH
-STOCKFISH_DEPTH = 12
+STOCKFISH_DEPTH = 6  # Reduced for faster testing
 MULTI_PV = 4
 SALT = "chess_position_salt_v1"
 OUTPUT_CSV = "output/positions.csv"
@@ -26,11 +26,11 @@ ELO_BUCKET_NAMES = ["0-1400", "1400-1800", "1800-2200", "2200-2600", "2600+"]
 
 # Target distribution for 800 games positions
 GAME_DISTRIBUTION = {
-    "0-1400": 4,  # Reduced for testing
-    "1400-1800": 8,
-    "1800-2200": 8,
-    "2200-2600": 4,
-    "2600+": 4
+    "0-1400": 80,
+    "1400-1800": 200,
+    "1800-2200": 280,
+    "2200-2600": 160,
+    "2600+": 80
 }
 
 # Phase ratios within each ELO bucket
@@ -62,8 +62,6 @@ class Position:
     avg_elo: float
     elo_bucket: str
     is_tactical: bool
-    best_move: str
-    evaluation: float
     hash_bucket: int
 
 
@@ -161,16 +159,16 @@ def is_capture_or_check(board: chess.Board, move: chess.Move) -> bool:
     return in_check
 
 
-def classify_position(board: chess.Board, engine: chess.engine.SimpleEngine, phase: str) -> Tuple[bool, str, float]:
+def classify_position(board: chess.Board, engine: chess.engine.SimpleEngine, phase: str) -> bool:
     """
     Classify position as tactical or quiet using Stockfish.
-    Returns (is_tactical, best_move_uci, evaluation)
+    Returns True if tactical, False if quiet.
     """
     # Run multi-PV analysis
     info = engine.analyse(board, chess.engine.Limit(depth=STOCKFISH_DEPTH), multipv=MULTI_PV)
     
     if not info:
-        return False, "", 0.0
+        return True  # Default to tactical if analysis fails
     
     # Get top moves and evaluations
     top_moves = []
@@ -196,7 +194,7 @@ def classify_position(board: chess.Board, engine: chess.engine.SimpleEngine, pha
             top_moves.append((move, cp_score))
     
     if not top_moves:
-        return False, "", 0.0
+        return True  # Default to tactical if no moves found
     
     best_move, best_eval = top_moves[0]
     
@@ -238,7 +236,7 @@ def classify_position(board: chess.Board, engine: chess.engine.SimpleEngine, pha
                 # Neither clearly tactical nor quiet - default to tactical
                 is_tactical = True
     
-    return is_tactical, best_move.uci(), best_eval / 100.0  # Return eval in pawns
+    return is_tactical
 
 
 def sample_position_from_game(conn: sqlite3.Connection, game_id: str, moves_uci: str, 
@@ -278,14 +276,11 @@ def sample_position_from_game(conn: sqlite3.Connection, game_id: str, moves_uci:
     fen4 = get_fen4(selected_board)
     pos_id, hash_bucket = calculate_pos_id(fen4)
     
-    # Check if position already exists
-    cursor = conn.cursor()
-    cursor.execute("SELECT 1 FROM positions WHERE pos_id = ?", (pos_id,))
-    if cursor.fetchone():
-        return None
+    # Position deduplication is handled by the caller checking existing_pos_ids
+    # No need to check database here since we track in memory
     
     # Classify position
-    is_tactical, best_move, evaluation = classify_position(selected_board, engine, phase)
+    is_tactical = classify_position(selected_board, engine, phase)
     
     return Position(
         pos_id=pos_id,
@@ -300,10 +295,92 @@ def sample_position_from_game(conn: sqlite3.Connection, game_id: str, moves_uci:
         avg_elo=avg_elo,
         elo_bucket=get_elo_bucket(avg_elo),
         is_tactical=is_tactical,
-        best_move=best_move,
-        evaluation=evaluation,
         hash_bucket=hash_bucket
     )
+
+
+def load_existing_positions(csv_path: str) -> Tuple[set, Dict[str, Dict[str, Dict[str, Dict[str, List[Position]]]]]]:
+    """Load existing positions from CSV and rebuild the selected data structure."""
+    existing_pos_ids = set()  # Changed to track position IDs, not game IDs
+    selected = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list))))
+    
+    if not os.path.exists(csv_path):
+        return existing_pos_ids, selected
+    
+    print(f"Loading existing positions from {csv_path}...")
+    with open(csv_path, 'r') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            # Track position IDs to avoid duplicates (not game IDs)
+            # We need to reconstruct the pos_id from the FEN
+            fen4 = ' '.join(row['fen'].split()[:4])  # Get first 4 fields
+            pos_id = hashlib.sha256(f"{SALT}{fen4}".encode()).hexdigest()
+            existing_pos_ids.add(pos_id)
+            
+            # Rebuild the nested structure for counting
+            elo_bucket = row['elo_bucket']
+            phase = row['phase']
+            type_key = row['type']
+            color = row['color']
+            
+            # Create a minimal Position object for counting
+            pos = Position(
+                pos_id="",  # Not needed for counting
+                fen=row['fen'],
+                fen4="",  # Not needed
+                game_id=row.get('game_id', ''),
+                ply=0,  # Not needed
+                phase=phase,
+                side_to_move=color,
+                legal_move_count=int(row['legal_moves']),
+                castling_rights="",  # Not needed
+                avg_elo=0,  # Not needed
+                elo_bucket=elo_bucket,
+                is_tactical=(type_key == 'tactical'),
+                hash_bucket=int(row['hash_bucket'])
+            )
+            selected[elo_bucket][phase][type_key][color].append(pos)
+    
+    total_loaded = sum(len(positions) for elo in selected.values()
+                      for phase in elo.values()
+                      for type_pos in phase.values()
+                      for positions in type_pos.values())
+    print(f"Loaded {total_loaded} existing positions ({len(existing_pos_ids)} unique positions)")
+    
+    return existing_pos_ids, selected
+
+
+def write_positions_incremental(selected: Dict, csv_path: str, append: bool = False):
+    """Write positions to CSV, optionally appending."""
+    mode = 'a' if append else 'w'
+    write_header = not append or not os.path.exists(csv_path)
+    
+    with open(csv_path, mode, newline='') as csvfile:
+        fieldnames = ['game_id', 'fen', 'elo_bucket', 'phase', 'type', 'color', 
+                     'legal_moves', 'hash_bucket']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        
+        if write_header:
+            writer.writeheader()
+        
+        count = 0
+        for elo_bucket in selected:
+            for phase in selected[elo_bucket]:
+                for type_key in selected[elo_bucket][phase]:
+                    for color in selected[elo_bucket][phase][type_key]:
+                        for position in selected[elo_bucket][phase][type_key][color]:
+                            writer.writerow({
+                                'game_id': position.game_id,
+                                'fen': position.fen,
+                                'elo_bucket': position.elo_bucket,
+                                'phase': position.phase,
+                                'type': type_key,
+                                'color': position.side_to_move,
+                                'legal_moves': position.legal_move_count,
+                                'hash_bucket': position.hash_bucket
+                            })
+                            count += 1
+        return count
 
 
 def main():
@@ -319,14 +396,34 @@ def main():
         print("Make sure Stockfish is installed and in your PATH, or update STOCKFISH_PATH.", file=sys.stderr)
         sys.exit(1)
     
+    # Load existing positions if any
+    existing_pos_ids, selected = load_existing_positions(OUTPUT_CSV)
+    
     conn = sqlite3.connect("output/games.db")
-    
-    # Track selected positions by category
-    # Structure: selected[elo_bucket][phase][type][color] = [positions]
-    selected = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list))))
-    
-    # Get games by ELO bucket
     cursor = conn.cursor()
+    
+    # Check overall progress
+    total_positions = sum(len(positions) for elo in selected.values()
+                         for phase in elo.values()
+                         for type_pos in phase.values()
+                         for positions in type_pos.values())
+    total_target = sum(GAME_DISTRIBUTION.values())
+    
+    if total_positions >= total_target:
+        print(f"\nAlready have {total_positions} positions (target: {total_target}). Nothing to do.")
+        conn.close()
+        engine.quit()
+        return
+    
+    print(f"\nStarting from {total_positions}/{total_target} positions...")
+    
+    # Debug: Show breakdown by bucket
+    print("\nCurrent position counts by bucket:")
+    for bucket in ELO_BUCKET_NAMES:
+        bucket_count = sum(len(positions) for phase in selected.get(bucket, {}).values()
+                          for type_pos in phase.values()
+                          for positions in type_pos.values())
+        print(f"  {bucket}: {bucket_count}/{GAME_DISTRIBUTION.get(bucket, 0)}")
     
     for elo_bucket, target_count in GAME_DISTRIBUTION.items():
         min_elo, max_elo = ELO_RANGES[ELO_BUCKET_NAMES.index(elo_bucket)]
@@ -342,7 +439,16 @@ def main():
                 "quiet": {"white": quiet_count // 2, "black": (quiet_count + 1) // 2}
             }
         
-        print(f"\nProcessing {elo_bucket} ELO bucket (target: {target_count} positions)...")
+        # Count existing positions for this bucket
+        bucket_current = sum(len(positions) for phase_positions in selected[elo_bucket].values()
+                           for type_positions in phase_positions.values()
+                           for positions in type_positions.values())
+        
+        if bucket_current >= target_count:
+            print(f"\n{elo_bucket} ELO bucket already complete ({bucket_current}/{target_count} positions)")
+            continue
+            
+        print(f"\nProcessing {elo_bucket} ELO bucket (current: {bucket_current}, target: {target_count})...")
         
         # Get all games in this ELO range
         cursor.execute("""
@@ -355,21 +461,25 @@ def main():
         games = cursor.fetchall()
         game_idx = 0
         
-        bucket_total = 0
-        while game_idx < len(games) and bucket_total < target_count:
+        # Track newly added positions for this bucket
+        new_positions = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+        
+        while game_idx < len(games) and bucket_current < target_count:
             game_id, moves_uci, avg_elo = games[game_idx]
             game_idx += 1
             
-            # Skip if we already have a position from this game
-            if any(game_id in [p.game_id for p in positions] 
-                   for phase_positions in selected[elo_bucket].values()
-                   for type_positions in phase_positions.values()
-                   for positions in type_positions.values()):
-                continue
+            # Note: We can sample multiple positions from the same game
+            # Only duplicate FENs (pos_id) are avoided
             
             # Sample position from game
+            if game_idx % 50 == 0:
+                print(f"    Checking game {game_idx}/{len(games)}...")
             position = sample_position_from_game(conn, game_id, moves_uci, avg_elo, engine)
             if not position:
+                continue
+                
+            # Check if this position already exists
+            if position.pos_id in existing_pos_ids:
                 continue
             
             # Check if we need this type of position
@@ -378,57 +488,41 @@ def main():
             target = phase_targets[position.phase][type_key][position.side_to_move]
             
             if current_count < target:
-                # Store position in database
-                cursor.execute("""
-                    INSERT INTO positions (
-                        pos_id, game_id, ply, fen, fen4, phase, side_to_move,
-                        legal_move_count, castling_rights, hash_bucket
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    position.pos_id, position.game_id, position.ply, position.fen,
-                    position.fen4, position.phase, position.side_to_move,
-                    position.legal_move_count, position.castling_rights, position.hash_bucket
-                ))
-                
+                # Add to both tracking structures (no database insert needed)
                 selected[elo_bucket][position.phase][type_key][position.side_to_move].append(position)
+                new_positions[position.phase][type_key][position.side_to_move].append(position)
+                existing_pos_ids.add(position.pos_id)
+                bucket_current += 1
                 
-                bucket_total = sum(len(positions) for phase_positions in selected[elo_bucket].values()
-                                 for type_positions in phase_positions.values()
-                                 for positions in type_positions.values())
-                if bucket_total % 10 == 0 or bucket_total == target_count:
-                    print(f"  Selected {bucket_total}/{target_count} positions...")
+                # Write incrementally every 10 positions or when done
+                if len([p for phase in new_positions.values() 
+                       for type_pos in phase.values() 
+                       for positions in type_pos.values() 
+                       for p in positions]) % 10 == 0:
+                    # Write the new positions
+                    temp_selected = {elo_bucket: new_positions}
+                    write_positions_incremental(temp_selected, OUTPUT_CSV, append=True)
+                    # Clear the buffer
+                    new_positions = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+                    print(f"  Selected {bucket_current}/{target_count} positions...")
     
-    conn.commit()
+        # Write any remaining positions for this bucket
+        if any(positions for phase in new_positions.values() 
+               for type_pos in phase.values() 
+               for positions in type_pos.values()):
+            temp_selected = {elo_bucket: new_positions}
+            write_positions_incremental(temp_selected, OUTPUT_CSV, append=True)
+            print(f"  Final count for {elo_bucket}: {bucket_current}/{target_count} positions")
+    
     engine.quit()
     
-    # Write to CSV
-    print(f"\nWriting {OUTPUT_CSV}...")
-    with open(OUTPUT_CSV, 'w', newline='') as csvfile:
-        fieldnames = ['fen', 'elo_bucket', 'phase', 'type', 'color', 'best_move', 
-                     'evaluation', 'legal_moves', 'hash_bucket']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        
-        total_written = 0
-        for elo_bucket in selected:
-            for phase in selected[elo_bucket]:
-                for type_key in selected[elo_bucket][phase]:
-                    for color in selected[elo_bucket][phase][type_key]:
-                        for position in selected[elo_bucket][phase][type_key][color]:
-                            writer.writerow({
-                                'fen': position.fen,
-                                'elo_bucket': position.elo_bucket,
-                                'phase': position.phase,
-                                'type': type_key,
-                                'color': position.side_to_move,
-                                'best_move': position.best_move,
-                                'evaluation': position.evaluation,
-                                'legal_moves': position.legal_move_count,
-                                'hash_bucket': position.hash_bucket
-                            })
-                            total_written += 1
+    # Count final total
+    final_total = sum(len(positions) for elo in selected.values()
+                     for phase in elo.values()
+                     for type_pos in phase.values()
+                     for positions in type_pos.values())
     
-    print(f"Successfully wrote {total_written} positions to {OUTPUT_CSV}")
+    print(f"\nSuccessfully selected {final_total} positions total")
     
     # Also include puzzles (200 positions) - placeholder for now
     print("\nNote: Lichess puzzles (200 positions) need to be added separately")

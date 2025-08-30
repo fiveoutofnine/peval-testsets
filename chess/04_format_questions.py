@@ -26,9 +26,8 @@ def main():
             # Input is the FEN position
             input_str = pos['fen']
             
-            # Expected output would be the best move from Stockfish analysis
-            # For now, placeholder - will need powerful Stockfish instance
-            expected_output = ""  # TODO: Run Stockfish analysis
+            # Expected output will be computed by a separate powerful Stockfish instance
+            expected_output = ""  # Will be filled by step 5
             
             # Private flag based on hash_bucket
             # Use 80/20 split: bucket >= 80 is private (20% of data)

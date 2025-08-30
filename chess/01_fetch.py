@@ -10,8 +10,8 @@ import sys
 
 # Configuration
 URL = "https://database.lichess.org/standard/lichess_db_standard_rated_2025-07.pgn.zst"
-CHUNK_SIZE_MB = 100  # Size of chunk to extract in MB (after decompression)
-OFFSET_MB = 0  # Offset from start of decompressed data in MB
+CHUNK_SIZE_MB = 512  # Size of chunk to extract in MB (after decompression)
+OFFSET_MB = 15_555  # Offset from start of decompressed data in MB
 OUTPUT_FILE = "games.pgn"
 TEMP_FILE = "games.pgn.zst"
 
