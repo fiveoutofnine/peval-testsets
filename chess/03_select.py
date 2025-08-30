@@ -62,6 +62,7 @@ class Position:
     avg_elo: float
     elo_bucket: str
     is_tactical: bool
+    is_mate: bool
     hash_bucket: int
 
 
@@ -159,16 +160,16 @@ def is_capture_or_check(board: chess.Board, move: chess.Move) -> bool:
     return in_check
 
 
-def classify_position(board: chess.Board, engine: chess.engine.SimpleEngine, phase: str) -> bool:
+def classify_position(board: chess.Board, engine: chess.engine.SimpleEngine, phase: str) -> tuple[bool, bool]:
     """
     Classify position as tactical or quiet using Stockfish.
-    Returns True if tactical, False if quiet.
+    Returns (is_tactical, is_mate) tuple.
     """
     # Run multi-PV analysis
     info = engine.analyse(board, chess.engine.Limit(depth=STOCKFISH_DEPTH), multipv=MULTI_PV)
     
     if not info:
-        return True  # Default to tactical if analysis fails
+        return True, False  # Default to tactical, not mate if analysis fails
     
     # Get top moves and evaluations
     top_moves = []
@@ -194,7 +195,7 @@ def classify_position(board: chess.Board, engine: chess.engine.SimpleEngine, pha
             top_moves.append((move, cp_score))
     
     if not top_moves:
-        return True  # Default to tactical if no moves found
+        return True, False  # Default to tactical, not mate if no moves found
     
     best_move, best_eval = top_moves[0]
     
@@ -212,10 +213,12 @@ def classify_position(board: chess.Board, engine: chess.engine.SimpleEngine, pha
     
     # Tactical classification criteria
     is_tactical = False
+    is_mate = False
     
     # Mate in PV
     if abs(best_eval) >= 10000:
         is_tactical = True
+        is_mate = True
     # Large evaluation gap
     elif (phase in ["opening", "middlegame"] and gap >= 100) or (phase == "endgame" and gap >= 60):
         is_tactical = True
@@ -236,7 +239,7 @@ def classify_position(board: chess.Board, engine: chess.engine.SimpleEngine, pha
                 # Neither clearly tactical nor quiet - default to tactical
                 is_tactical = True
     
-    return is_tactical
+    return is_tactical, is_mate
 
 
 def sample_position_from_game(conn: sqlite3.Connection, game_id: str, moves_uci: str, 
@@ -280,7 +283,7 @@ def sample_position_from_game(conn: sqlite3.Connection, game_id: str, moves_uci:
     # No need to check database here since we track in memory
     
     # Classify position
-    is_tactical = classify_position(selected_board, engine, phase)
+    is_tactical, is_mate = classify_position(selected_board, engine, phase)
     
     return Position(
         pos_id=pos_id,
@@ -295,6 +298,7 @@ def sample_position_from_game(conn: sqlite3.Connection, game_id: str, moves_uci:
         avg_elo=avg_elo,
         elo_bucket=get_elo_bucket(avg_elo),
         is_tactical=is_tactical,
+        is_mate=is_mate,
         hash_bucket=hash_bucket
     )
 
@@ -337,6 +341,7 @@ def load_existing_positions(csv_path: str) -> Tuple[set, Dict[str, Dict[str, Dic
                 avg_elo=0,  # Not needed
                 elo_bucket=elo_bucket,
                 is_tactical=(type_key == 'tactical'),
+                is_mate=False,  # Not tracked in existing CSV
                 hash_bucket=int(row['hash_bucket'])
             )
             selected[elo_bucket][phase][type_key][color].append(pos)
@@ -399,6 +404,10 @@ def main():
     # Load existing positions if any
     existing_pos_ids, selected = load_existing_positions(OUTPUT_CSV)
     
+    # Track mate positions globally (max 4% of total = 28 positions for 700 total)
+    mate_positions_count = 0
+    MAX_MATE_POSITIONS = int(sum(GAME_DISTRIBUTION.values()) * 0.04)  # 4% cap
+    
     conn = sqlite3.connect("output/games.db")
     cursor = conn.cursor()
     
@@ -450,12 +459,12 @@ def main():
             
         print(f"\nProcessing {elo_bucket} ELO bucket (current: {bucket_current}, target: {target_count})...")
         
-        # Get all games in this ELO range
+        # Get all games in this ELO range, ordered by deterministic rand_key
         cursor.execute("""
             SELECT game_id, moves_uci, avg_elo 
             FROM games 
             WHERE avg_elo >= ? AND avg_elo < ? AND moves_uci IS NOT NULL
-            ORDER BY RANDOM()
+            ORDER BY rand_key
         """, (min_elo, max_elo))
         
         games = cursor.fetchall()
@@ -482,6 +491,10 @@ def main():
             if position.pos_id in existing_pos_ids:
                 continue
             
+            # Check mate position cap
+            if position.is_mate and mate_positions_count >= MAX_MATE_POSITIONS:
+                continue  # Skip mate positions if we've reached the cap
+            
             # Check if we need this type of position
             type_key = "tactical" if position.is_tactical else "quiet"
             current_count = len(selected[elo_bucket][position.phase][type_key][position.side_to_move])
@@ -493,6 +506,10 @@ def main():
                 new_positions[position.phase][type_key][position.side_to_move].append(position)
                 existing_pos_ids.add(position.pos_id)
                 bucket_current += 1
+                
+                # Track mate positions
+                if position.is_mate:
+                    mate_positions_count += 1
                 
                 # Write incrementally every 10 positions or when done
                 if len([p for phase in new_positions.values() 
@@ -523,6 +540,7 @@ def main():
                      for positions in type_pos.values())
     
     print(f"\nSuccessfully selected {final_total} positions total")
+    print(f"Mate positions: {mate_positions_count}/{MAX_MATE_POSITIONS} (cap: {MAX_MATE_POSITIONS})")
     
     # Also include puzzles (200 positions) - placeholder for now
     print("\nNote: Lichess puzzles (200 positions) need to be added separately")

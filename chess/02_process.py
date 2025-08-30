@@ -149,7 +149,8 @@ def create_database(db_path: str):
             result TEXT,
             ply_count INTEGER,
             moves_uci TEXT,
-            processed BOOLEAN DEFAULT FALSE
+            processed BOOLEAN DEFAULT FALSE,
+            rand_key REAL
         )
     ''')
     
@@ -219,12 +220,15 @@ def main():
             game_id = f"game_{filtered_count:06d}"
             game_info = extract_game_info(game, game_id, pgn_offset)
             
+            # Generate deterministic random key based on game_id
+            rand_key = int(hashlib.sha256(f"rand_{game_id}".encode()).hexdigest()[:16], 16) / float(2**64)
+            
             # Store in database
             cursor.execute('''
                 INSERT INTO games (
                     game_id, pgn_offset, white_elo, black_elo, avg_elo, time_control,
-                    eco, opening, result, ply_count, moves_uci
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    eco, opening, result, ply_count, moves_uci, rand_key
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 game_info.game_id,
                 game_info.pgn_offset,
@@ -236,7 +240,8 @@ def main():
                 game_info.opening,
                 game_info.result,
                 game_info.ply_count,
-                game_info.moves_uci
+                game_info.moves_uci,
+                rand_key
             ))
             
             filtered_count += 1

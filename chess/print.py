@@ -86,7 +86,8 @@ def get_position_stats():
             "by_phase": defaultdict(int),
             "by_type": defaultdict(int),
             "by_color": defaultdict(int),
-            "by_elo_phase_type": defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+            "by_elo_phase_type": defaultdict(lambda: defaultdict(lambda: defaultdict(int))),
+            "mate_positions": 0
         }
         
         with open(csv_path, 'r') as f:
@@ -187,6 +188,10 @@ def main():
             headers = ["Time Control", "Count"]
             rows = [[tc, f"{count:,}"] for tc, count in db_stats["time_controls"]]
             print(format_table(headers, rows))
+        
+        print("\nDatabase Features:")
+        print("- Deterministic ordering: ✓ (rand_key column)")
+        print("- Reproducible selection: ✓")
     else:
         print("\n\nDatabase Statistics: No data (games.db not found)")
     
@@ -199,7 +204,7 @@ def main():
         # Distribution by ELO
         print("\nPositions by ELO Bucket:")
         headers = ["ELO Range", "Selected", "Target", "Progress"]
-        targets = {"0-1400": 70, "1400-1800": 175, "1800-2200": 245, "2200-2600": 140, "2600+": 70}
+        targets = {"0-1400": 80, "1400-1800": 200, "1800-2200": 280, "2200-2600": 160, "2600+": 80}
         rows = []
         for elo in ["0-1400", "1400-1800", "1800-2200", "2200-2600", "2600+"]:
             count = pos_stats["by_elo"].get(elo, 0)
@@ -230,6 +235,12 @@ def main():
             target = 28 if pos_type == "tactical" else 72
             rows.append([pos_type.capitalize(), str(count), f"{percentage:.1f}%", f"{target}%"])
         print(format_table(headers, rows))
+        
+        # Mate positions (if tracked)
+        if "mate_positions" in pos_stats:
+            mate_cap = int(800 * 0.04)  # 4% of 800
+            mate_percentage = (pos_stats["mate_positions"] / pos_stats["total"] * 100) if pos_stats["total"] > 0 else 0
+            print(f"\nMate positions: {pos_stats['mate_positions']}/{mate_cap} ({mate_percentage:.1f}% of total, cap: 4.0%)")
         
         # Distribution by color
         print("\nPositions by Side to Move:")
