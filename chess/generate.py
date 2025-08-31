@@ -217,41 +217,11 @@ def main():
         print("\n✗ Pipeline failed at Step 3")
         sys.exit(1)
 
-    # Step 4: Create questions with evaluations for games
-    has_evals, question_count = check_questions_status()
-
-    if has_evals and not force_all:
-        print("✓ Step 4: Create questions - already complete")
-    elif skip_eval:
-        print("⚠ Step 4: Create questions - skipped (--skip-eval flag)")
-    else:
-        print("\n" + "-" * 60)
-        print("Step 4: Create questions with evaluations")
-        print("-" * 60)
-        print("This step will evaluate ALL legal moves for each position.")
-        print("Estimated time: 20-40 minutes for ~750 positions")
-        print("\nEngine configuration:")
-        print("  - Depth: 20")
-        print("  - Time per position: 2 seconds")
-        print("  - Output: All moves with evaluation scores")
-
-        if not force_all and question_count > 0:
-            print(f"\nWarning: questions.csv exists with {question_count} positions")
-            print("This will overwrite the existing file.")
-
-        response = input("\nContinue with evaluation? (y/n): ")
-        if response.lower() == "y":
-            if not run_step("Step 4: Create questions", "04_create_questions_games.py"):
-                print("\n✗ Pipeline failed at Step 4")
-                sys.exit(1)
-        else:
-            print("⚠ Evaluation skipped")
-
-    # Step 5: Fetch puzzles
+    # Step 4: Fetch puzzles
     if not os.path.exists("output/lichess_puzzles.csv"):
-        if os.path.exists("05_fetch_puzzles.py"):
+        if os.path.exists("04_fetch_puzzles.py"):
             print("\n" + "-" * 60)
-            print("Step 5: Fetch Lichess puzzles")
+            print("Step 4: Fetch Lichess puzzles")
             print("-" * 60)
             print(
                 "This will download the Lichess puzzle database (~250MB compressed, ~1GB uncompressed)"
@@ -259,8 +229,8 @@ def main():
             print("URL: https://database.lichess.org/lichess_db_puzzle.csv.zst")
             response = input("\nContinue with download? (y/n): ")
             if response.lower() == "y":
-                if not run_step("Step 5: Fetch puzzles", "05_fetch_puzzles.py"):
-                    print("\n✗ Pipeline failed at Step 5")
+                if not run_step("Step 4: Fetch puzzles", "04_fetch_puzzles.py"):
+                    print("\n✗ Pipeline failed at Step 4")
                     print(
                         "  You can manually download from: https://database.lichess.org/lichess_db_puzzle.csv.zst"
                     )
@@ -281,17 +251,48 @@ def main():
             print("  Then decompress and move to output/lichess_puzzles.csv")
             sys.exit(1)
     else:
-        print("✓ Step 5: Fetch puzzles - already complete")
+        print("✓ Step 4: Fetch puzzles - already complete")
 
-    # Step 6: Select puzzles
+    # Step 5: Select puzzles
     if not run_step(
-        "Step 6: Select puzzles",
-        "06_select_puzzles.py",
+        "Step 5: Select puzzles",
+        "05_select_puzzles.py",
         ["output/puzzles.csv"],
         force=force_all,
     ):
-        print("\n✗ Pipeline failed at Step 6")
+        print("\n✗ Pipeline failed at Step 5")
         sys.exit(1)
+
+    # Step 6: Create questions with evaluations for both games and puzzles
+    has_evals, question_count = check_questions_status()
+
+    if has_evals and not force_all:
+        print("✓ Step 6: Create questions - already complete")
+    elif skip_eval:
+        print("⚠ Step 6: Create questions - skipped (--skip-eval flag)")
+    else:
+        print("\n" + "-" * 60)
+        print("Step 6: Create questions with evaluations")
+        print("-" * 60)
+        print("This step will evaluate ALL legal moves for each position.")
+        print("Combining game positions and puzzles into a single evaluation set.")
+        print("Estimated time: 30-50 minutes for ~1000 positions")
+        print("\nEngine configuration:")
+        print("  - Depth: 20")
+        print("  - Time per position: 2 seconds")
+        print("  - Output: All moves with evaluation scores")
+
+        if not force_all and question_count > 0:
+            print(f"\nWarning: questions.csv exists with {question_count} positions")
+            print("This will overwrite the existing file.")
+
+        response = input("\nContinue with evaluation? (y/n): ")
+        if response.lower() == "y":
+            if not run_step("Step 6: Create questions", "06_create_questions.py"):
+                print("\n✗ Pipeline failed at Step 6")
+                sys.exit(1)
+        else:
+            print("⚠ Evaluation skipped")
 
     # Final summary
     print("\n" + "=" * 60)

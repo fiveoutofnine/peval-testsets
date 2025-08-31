@@ -53,7 +53,7 @@ def load_and_select_puzzles() -> List[Dict]:
     """Load puzzles and select 200 with random selection."""
     if not os.path.exists(PUZZLE_CSV):
         print(
-            f"Error: {PUZZLE_CSV} not found. Run 05_fetch_puzzles.py first.",
+            f"Error: {PUZZLE_CSV} not found. Run 04_fetch_puzzles.py first.",
             file=sys.stderr,
         )
         sys.exit(1)

@@ -271,3 +271,38 @@ All (1000)
 - **50/50 color** and distribution totals enforced at selection time (as shown above).
 
 If you want, I can patch your canvas script to (a) add a deterministic `rand_key` column and (b) emit this exact slice (SQL) so you can regenerate the same tree on demand.
+
+## Pipeline
+
+The chess position selection pipeline consists of 6 steps:
+
+1. **01_fetch_games.py** - Downloads a chunk of Lichess game data
+2. **02_process_games.py** - Filters and processes games into a SQLite database
+3. **03_select_games.py** - Selects 800 positions from games based on ELO, phase, and type distribution
+4. **04_fetch_puzzles.py** - Downloads the Lichess puzzle database (~1GB uncompressed)
+5. **05_select_puzzles.py** - Randomly selects 200 puzzles (70% middlegame, 30% endgame)
+6. **06_create_questions.py** - Evaluates all legal moves for both game positions and puzzles using Stockfish
+
+### Running the Pipeline
+
+```bash
+# Run the entire pipeline (skips completed steps)
+python generate.py
+
+# Force re-run all steps
+python generate.py --force
+
+# Skip the evaluation step (useful for testing)
+python generate.py --skip-eval
+
+# Show detailed statistics
+python print.py
+```
+
+The pipeline will produce:
+- `output/games.pgn` - Raw game data from Lichess
+- `output/games.db` - Filtered games in SQLite format
+- `output/positions.csv` - 800 selected game positions
+- `output/lichess_puzzles.csv` - Full Lichess puzzle database
+- `output/puzzles.csv` - 200 selected puzzles
+- `questions.csv` - Final dataset with all 1000 positions and their move evaluations
