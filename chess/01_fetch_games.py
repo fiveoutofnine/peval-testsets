@@ -12,7 +12,7 @@ import sys
 URL = "https://database.lichess.org/standard/lichess_db_standard_rated_2025-07.pgn.zst"
 CHUNK_SIZE_MB = 512  # Size of chunk to extract in MB (after decompression)
 OFFSET_MB = 15_555  # Offset from start of decompressed data in MB
-OUTPUT_FILE = "games.pgn"
+OUTPUT_FILE = "output/games.pgn"
 TEMP_FILE = "games.pgn.zst"
 
 
@@ -28,6 +28,10 @@ def download_chunk():
 
     # Get the directory where this script is located
     script_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # Ensure output directory exists
+    os.makedirs(os.path.join(script_dir, "output"), exist_ok=True)
+    
     output_path = os.path.join(script_dir, OUTPUT_FILE)
 
     try:

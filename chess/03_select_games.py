@@ -422,7 +422,7 @@ def write_positions_incremental(selected: Dict, csv_path: str, append: bool = Fa
 def main():
     if not os.path.exists("output/games.db"):
         print(
-            "Error: output/games.db not found. Run 02_process.py first.",
+            "Error: output/games.db not found. Run 02_process_games.py first.",
             file=sys.stderr,
         )
         sys.exit(1)

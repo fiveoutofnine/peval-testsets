@@ -114,9 +114,9 @@ def show_statistics():
     stats = []
 
     # Check games.pgn
-    if os.path.exists("games.pgn"):
-        size = os.path.getsize("games.pgn") / (1024 * 1024)
-        stats.append(f"  games.pgn: {size:.1f} MB")
+    if os.path.exists("output/games.pgn"):
+        size = os.path.getsize("output/games.pgn") / (1024 * 1024)
+        stats.append(f"  output/games.pgn: {size:.1f} MB")
 
     # Check games.db
     if os.path.exists("output/games.db"):
@@ -171,22 +171,22 @@ def main():
     print("-" * 60)
 
     # Step 1: Fetch games
-    if not os.path.exists("games.pgn"):
-        if os.path.exists("01_fetch.py"):
-            if not run_step("Step 1: Fetch games", "01_fetch.py"):
+    if not os.path.exists("output/games.pgn"):
+        if os.path.exists("01_fetch_games.py"):
+            if not run_step("Step 1: Fetch games", "01_fetch_games.py"):
                 print("\n✗ Pipeline failed at Step 1")
                 sys.exit(1)
         else:
-            print("\n✗ Error: games.pgn not found")
+            print("\n✗ Error: output/games.pgn not found")
             print("  Please download from https://database.lichess.org/")
-            print("  or create 01_fetch.py to download automatically")
+            print("  or create 01_fetch_games.py to download automatically")
             sys.exit(1)
     else:
         print("✓ Step 1: Fetch games - already complete")
 
     # Step 2: Process and filter games
     if not run_step(
-        "Step 2: Process games", "02_process.py", ["output/games.db"], force=force_all
+        "Step 2: Process games", "02_process_games.py", ["output/games.db"], force=force_all
     ):
         print("\n✗ Pipeline failed at Step 2")
         sys.exit(1)
@@ -194,7 +194,7 @@ def main():
     # Step 3: Select positions
     if not run_step(
         "Step 3: Select positions",
-        "03_select.py",
+        "03_select_games.py",
         ["output/positions.csv"],
         force=force_all,
     ):
@@ -225,7 +225,7 @@ def main():
 
         response = input("\nContinue with evaluation? (y/n): ")
         if response.lower() == "y":
-            if not run_step("Step 4: Create questions", "04_create_questions.py"):
+            if not run_step("Step 4: Create questions", "04_create_questions_games.py"):
                 print("\n✗ Pipeline failed at Step 4")
                 sys.exit(1)
         else:

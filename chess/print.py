@@ -162,7 +162,7 @@ def main():
 
     # Check if files exist
     files_status = [
-        ("games.pgn", os.path.exists("games.pgn")),
+        ("output/games.pgn", os.path.exists("output/games.pgn")),
         ("output/games.db", os.path.exists("output/games.db")),
         ("output/positions.csv", os.path.exists("output/positions.csv")),
         ("questions.csv", os.path.exists("questions.csv")),

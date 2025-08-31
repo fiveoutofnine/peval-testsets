@@ -29,7 +29,6 @@ env/
 .DS_Store
 
 # Chess competition specific
-games.pgn
 /chess/output/
 !questions.csv
 questions_temp.csv

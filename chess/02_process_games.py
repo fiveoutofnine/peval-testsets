@@ -188,12 +188,12 @@ def create_database(db_path: str):
 
 
 def main():
-    pgn_file = "games.pgn"  # Keep source file in root
+    pgn_file = "output/games.pgn"  # PGN file in output directory
     db_file = "output/games.db"
 
     # Check if PGN file exists
     if not os.path.exists(pgn_file):
-        print(f"Error: {pgn_file} does not exist!", file=sys.stderr)
+        print(f"Error: {pgn_file} does not exist! Run 01_fetch_games.py first.", file=sys.stderr)
         sys.exit(1)
 
     # Create database

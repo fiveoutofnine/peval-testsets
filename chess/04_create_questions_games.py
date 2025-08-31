@@ -185,7 +185,7 @@ def main():
     """Process positions.csv and create questions.csv with full evaluations."""
     if not os.path.exists("output/positions.csv"):
         print(
-            "Error: output/positions.csv not found. Run 03_select.py first.",
+            "Error: output/positions.csv not found. Run 03_select_games.py first.",
             file=sys.stderr,
         )
         sys.exit(1)
