@@ -163,13 +163,13 @@ def evaluate_all_moves(board: chess.Board, engine: chess.engine.SimpleEngine) ->
 def format_expected_output(move_scores: List[Tuple[str, int]]) -> str:
     """
     Format the move scores as a JSON string for the expected_output field.
-    Format: {"moves": [{"uci": "e2e4", "score": 25}, ...]}
+    Format: [{"uci": "e2e4", "score": 25}, ...]
     """
     moves_data = [
         {"uci": move, "score": score}
         for move, score in move_scores
     ]
-    return json.dumps({"moves": moves_data}, separators=(',', ':'))
+    return json.dumps(moves_data, separators=(',', ':'))
 
 
 def check_existing_progress(output_file: str) -> Dict[int, str]:
@@ -290,11 +290,11 @@ def main():
                     print(f" Done! Best: {best_move} ({score_str})")
                 else:
                     print(" No legal moves!")
-                    expected_output = json.dumps({"moves": []})
+                    expected_output = json.dumps([])
                 
             except Exception as e:
                 print(f" Error: {e}")
-                expected_output = json.dumps({"moves": []})
+                expected_output = json.dumps([])
             
             # Write row
             writer.writerow({

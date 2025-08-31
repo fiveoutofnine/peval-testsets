@@ -88,10 +88,10 @@ def check_questions_status():
             # Check if evaluations exist
             first_row = rows[0]
             if first_row.get('expected_output') and first_row['expected_output'] != '{}':
-                # Parse JSON to check if it has moves
+                # Parse JSON to check if it's a valid array
                 try:
                     data = json.loads(first_row['expected_output'])
-                    if data.get('moves'):
+                    if isinstance(data, list) and len(data) > 0:
                         return True, len(rows)
                 except:
                     pass
