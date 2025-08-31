@@ -23,7 +23,7 @@ ENGINE_CONFIG = {
     "time_limit": 2.0,  # Time limit per position in seconds
     "multipv": 500,  # Max number of lines to analyze (set high to get all moves)
     "threads": 1,  # Number of threads
-    "hash": 256,  # Hash table size in MB
+    "hash": 512,  # Hash table size in MB
 }
 
 # Testing configuration

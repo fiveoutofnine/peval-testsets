@@ -15,7 +15,7 @@ import chess.pgn
 
 # Configuration
 STOCKFISH_PATH = "stockfish"  # Assumes stockfish is in PATH
-STOCKFISH_DEPTH = 6  # Reduced for faster testing
+STOCKFISH_DEPTH = 12  # Reduced for faster testing
 MULTI_PV = 4
 SALT = "chess_position_salt_v1"
 OUTPUT_CSV = "output/positions.csv"
