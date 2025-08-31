@@ -32,6 +32,7 @@ env/
 games.pgn
 /chess/output/
 !questions.csv
+questions_temp.csv
 
 # Stockfish
 stockfish*
@@ -55,3 +56,19 @@ Stockfish*
 htmlcov/
 .tox/
 .nox/
+
+# Ruff
+.ruff_cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Database
+*.db-journal
+*.db-wal
+*.db-shm
+
+# UV package manager
+.python-version
