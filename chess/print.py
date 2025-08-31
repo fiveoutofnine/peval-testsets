@@ -125,6 +125,35 @@ def get_position_stats():
         return None
 
 
+def get_puzzle_stats():
+    """Get statistics from puzzles.csv."""
+    csv_path = "output/puzzles.csv"
+    if not os.path.exists(csv_path):
+        return None
+
+    try:
+        stats = {
+            "total": 0,
+            "by_phase": defaultdict(int),
+            "by_color": defaultdict(int),
+            "rating_range": [float("inf"), 0],
+        }
+
+        with open(csv_path) as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                stats["total"] += 1
+                stats["by_phase"][row["phase"]] += 1
+                stats["by_color"][row["color"]] += 1
+                rating = int(row["rating"])
+                stats["rating_range"][0] = min(stats["rating_range"][0], rating)
+                stats["rating_range"][1] = max(stats["rating_range"][1], rating)
+
+        return stats
+    except Exception:
+        return None
+
+
 def get_questions_stats():
     """Get statistics from questions.csv."""
     csv_path = "questions.csv"
@@ -165,6 +194,8 @@ def main():
         ("output/games.pgn", os.path.exists("output/games.pgn")),
         ("output/games.db", os.path.exists("output/games.db")),
         ("output/positions.csv", os.path.exists("output/positions.csv")),
+        ("output/lichess_puzzles.csv", os.path.exists("output/lichess_puzzles.csv")),
+        ("output/puzzles.csv", os.path.exists("output/puzzles.csv")),
         ("questions.csv", os.path.exists("questions.csv")),
     ]
 
@@ -293,21 +324,54 @@ def main():
             )
             rows.append([color.capitalize(), str(count), f"{percentage:.1f}%"])
         print(format_table(headers, rows))
-
-        # Detailed breakdown for one ELO bucket
-        print("\nDetailed Breakdown (1800-2200 ELO):")
-        headers = ["Phase", "Tactical", "Quiet", "Total"]
-        rows = []
-        elo_data = pos_stats["by_elo_phase_type"].get("1800-2200", {})
-        for phase in ["opening", "middlegame", "endgame"]:
-            phase_data = elo_data.get(phase, {})
-            tactical = phase_data.get("tactical", 0)
-            quiet = phase_data.get("quiet", 0)
-            total = tactical + quiet
-            rows.append([phase.capitalize(), str(tactical), str(quiet), str(total)])
-        print(format_table(headers, rows))
     else:
         print("\n\nPosition Statistics: No data (positions.csv not found)")
+
+    # Puzzle statistics
+    puzzle_stats = get_puzzle_stats()
+    if puzzle_stats:
+        print("\n\nPuzzle Statistics (puzzles.csv):")
+        print(f"Total puzzles: {puzzle_stats['total']:,}")
+
+        # Distribution by phase
+        print("\nPuzzles by Phase:")
+        headers = ["Phase", "Count", "Percentage", "Target"]
+        rows = []
+        phase_targets = {"middlegame": 140, "endgame": 60}
+        for phase in ["middlegame", "endgame"]:
+            count = puzzle_stats["by_phase"].get(phase, 0)
+            percentage = (
+                (count / puzzle_stats["total"] * 100)
+                if puzzle_stats["total"] > 0
+                else 0
+            )
+            target = phase_targets.get(phase, 0)
+            rows.append(
+                [phase.capitalize(), str(count), f"{percentage:.1f}%", str(target)]
+            )
+        print(format_table(headers, rows))
+
+        # Distribution by color
+        print("\nPuzzles by Side to Move:")
+        headers = ["Color", "Count", "Percentage"]
+        rows = []
+        for color in ["white", "black"]:
+            count = puzzle_stats["by_color"].get(color, 0)
+            percentage = (
+                (count / puzzle_stats["total"] * 100)
+                if puzzle_stats["total"] > 0
+                else 0
+            )
+            rows.append([color.capitalize(), str(count), f"{percentage:.1f}%"])
+        print(format_table(headers, rows))
+
+        # Rating range
+        if puzzle_stats["rating_range"][0] != float("inf"):
+            print(
+                f"\nCommunity rating range: {puzzle_stats['rating_range'][0]} - {puzzle_stats['rating_range'][1]}"
+            )
+    else:
+        print("\n\nPuzzle Statistics: No data (puzzles.csv not found)")
 
     # Questions statistics
     q_stats = get_questions_stats()
@@ -330,6 +394,23 @@ def main():
         print(format_table(headers, rows))
     else:
         print("\n\nQuestions Statistics: No data (questions.csv not found)")
+
+    # Total summary
+    print("\n\nTotal Summary:")
+    print("=" * 40)
+    game_positions = pos_stats["total"] if pos_stats else 0
+    puzzle_positions = puzzle_stats["total"] if puzzle_stats else 0
+    total_positions = game_positions + puzzle_positions
+
+    print(
+        f"Game positions:   {game_positions:4d} / 800  ({game_positions / 800 * 100:5.1f}%)"
+    )
+    print(
+        f"Puzzle positions: {puzzle_positions:4d} / 200  ({puzzle_positions / 200 * 100:5.1f}%)"
+    )
+    print(
+        f"Total positions:  {total_positions:4d} / 1000 ({total_positions / 1000 * 100:5.1f}%)"
+    )
 
     print("\n" + "=" * 60)
     print("Note: Run generate.py to create missing files")

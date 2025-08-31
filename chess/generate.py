@@ -127,7 +127,20 @@ def show_statistics():
     if os.path.exists("output/positions.csv"):
         with open("output/positions.csv") as f:
             count = sum(1 for _ in f) - 1
-        stats.append(f"  output/positions.csv: {count} positions selected")
+        stats.append(f"  output/positions.csv: {count} game positions selected")
+
+    # Check lichess_puzzles.csv
+    if os.path.exists("output/lichess_puzzles.csv"):
+        size = os.path.getsize("output/lichess_puzzles.csv") / (1024 * 1024)
+        stats.append(
+            f"  output/lichess_puzzles.csv: {size:.1f} MB (Lichess puzzle database)"
+        )
+
+    # Check puzzles.csv
+    if os.path.exists("output/puzzles.csv"):
+        with open("output/puzzles.csv") as f:
+            count = sum(1 for _ in f) - 1
+        stats.append(f"  output/puzzles.csv: {count} puzzles selected")
 
     # Check questions.csv
     has_evals, count = check_questions_status()
@@ -204,7 +217,7 @@ def main():
         print("\n✗ Pipeline failed at Step 3")
         sys.exit(1)
 
-    # Step 4: Create questions with evaluations
+    # Step 4: Create questions with evaluations for games
     has_evals, question_count = check_questions_status()
 
     if has_evals and not force_all:
@@ -234,6 +247,52 @@ def main():
         else:
             print("⚠ Evaluation skipped")
 
+    # Step 5: Fetch puzzles
+    if not os.path.exists("output/lichess_puzzles.csv"):
+        if os.path.exists("05_fetch_puzzles.py"):
+            print("\n" + "-" * 60)
+            print("Step 5: Fetch Lichess puzzles")
+            print("-" * 60)
+            print(
+                "This will download the Lichess puzzle database (~250MB compressed, ~1GB uncompressed)"
+            )
+            print("URL: https://database.lichess.org/lichess_db_puzzle.csv.zst")
+            response = input("\nContinue with download? (y/n): ")
+            if response.lower() == "y":
+                if not run_step("Step 5: Fetch puzzles", "05_fetch_puzzles.py"):
+                    print("\n✗ Pipeline failed at Step 5")
+                    print(
+                        "  You can manually download from: https://database.lichess.org/lichess_db_puzzle.csv.zst"
+                    )
+                    print("  Then decompress: zstd -d lichess_db_puzzle.csv.zst")
+                    print("  And move to: output/lichess_puzzles.csv")
+                    sys.exit(1)
+            else:
+                print("⚠ Puzzle download skipped")
+                print(
+                    "  You can manually download from: https://database.lichess.org/lichess_db_puzzle.csv.zst"
+                )
+                sys.exit(1)
+        else:
+            print("\n✗ Error: output/lichess_puzzles.csv not found")
+            print(
+                "  Please download from https://database.lichess.org/lichess_db_puzzle.csv.zst"
+            )
+            print("  Then decompress and move to output/lichess_puzzles.csv")
+            sys.exit(1)
+    else:
+        print("✓ Step 5: Fetch puzzles - already complete")
+
+    # Step 6: Select puzzles
+    if not run_step(
+        "Step 6: Select puzzles",
+        "06_select_puzzles.py",
+        ["output/puzzles.csv"],
+        force=force_all,
+    ):
+        print("\n✗ Pipeline failed at Step 6")
+        sys.exit(1)
+
     # Final summary
     print("\n" + "=" * 60)
     print("✓ Pipeline Complete!")
@@ -242,20 +301,31 @@ def main():
     show_statistics()
 
     # Check if we have the full dataset
+    game_positions = 0
+    puzzle_positions = 0
+
     if os.path.exists("output/positions.csv"):
         with open("output/positions.csv") as f:
-            position_count = sum(1 for _ in f) - 1
+            game_positions = sum(1 for _ in f) - 1
 
-        if position_count < 800:
-            print(f"\n⚠ Note: Only {position_count}/800 game positions selected")
+        if game_positions < 800:
+            print(f"\n⚠ Note: Only {game_positions}/800 game positions selected")
             print(
-                f"  Missing {800 - position_count} positions (likely due to limited 2600+ ELO games)"
+                f"  Missing {800 - game_positions} positions (likely due to limited 2600+ ELO games)"
             )
 
-        print(
-            f"\n⚠ Reminder: {1000 - position_count} Lichess puzzle positions still need to be added"
-        )
-        print("  to reach the target of 1000 total positions")
+    if os.path.exists("output/puzzles.csv"):
+        with open("output/puzzles.csv") as f:
+            puzzle_positions = sum(1 for _ in f) - 1
+
+    total_positions = game_positions + puzzle_positions
+    print(f"\n✓ Total positions: {total_positions}")
+    print(f"  - Game positions: {game_positions}")
+    print(f"  - Puzzle positions: {puzzle_positions}")
+
+    if total_positions < 1000:
+        print(f"\n⚠ Note: Only {total_positions}/1000 total positions")
+        print(f"  Missing {1000 - total_positions} positions")
 
     print("\nUsage:")
     print("  python generate.py          # Run pipeline (skip completed steps)")
