@@ -186,7 +186,10 @@ def main():
 
     # Step 2: Process and filter games
     if not run_step(
-        "Step 2: Process games", "02_process_games.py", ["output/games.db"], force=force_all
+        "Step 2: Process games",
+        "02_process_games.py",
+        ["output/games.db"],
+        force=force_all,
     ):
         print("\n✗ Pipeline failed at Step 2")
         sys.exit(1)

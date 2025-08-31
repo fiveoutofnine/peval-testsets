@@ -32,6 +32,7 @@ env/
 /chess/output/
 !questions.csv
 questions_temp.csv
+lichess_puzzles.csv
 
 # Stockfish
 stockfish*

@@ -28,10 +28,10 @@ def download_chunk():
 
     # Get the directory where this script is located
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    
+
     # Ensure output directory exists
     os.makedirs(os.path.join(script_dir, "output"), exist_ok=True)
-    
+
     output_path = os.path.join(script_dir, OUTPUT_FILE)
 
     try:

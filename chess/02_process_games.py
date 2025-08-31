@@ -193,7 +193,10 @@ def main():
 
     # Check if PGN file exists
     if not os.path.exists(pgn_file):
-        print(f"Error: {pgn_file} does not exist! Run 01_fetch_games.py first.", file=sys.stderr)
+        print(
+            f"Error: {pgn_file} does not exist! Run 01_fetch_games.py first.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     # Create database
