@@ -290,19 +290,6 @@ def main():
             "prompt",
             "expected_output",
             "private",
-            # Additional fields for traceability
-            "fen",
-            "source",
-            "elo_bucket",
-            "phase",
-            "type",
-            "color",
-            "castle_rights",
-            "en_passant",
-            "legal_moves",
-            "puzzle_id",
-            "rating",
-            "themes",
         ]
 
         writer = csv.DictWriter(f, fieldnames=fieldnames)
