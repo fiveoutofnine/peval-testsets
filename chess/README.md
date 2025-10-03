@@ -28,7 +28,7 @@ It consists of 200 real game positions and 50 puzzles randomly sampled from [Lic
   - 35 middlegame (70%)
   - 15 endgame (30%)
 
-> [!INFO]
+> [!NOTE]
 > The game positions for the competition's test set were sampled from a 4GB (uncompressed) slice of the [August 2025 Lichess database dump](https://database.lichess.org/standard/lichess_db_standard_rated_2025-08.pgn.zst).
 
 ## Generating
