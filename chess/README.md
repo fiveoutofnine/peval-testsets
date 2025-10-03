@@ -65,66 +65,69 @@ The generation pipeline consists of 6 sequential steps:
 
 ### 1. Fetch games (`01_fetch_games.py`)
 
-Downloads recent Lichess game data in PGN format. By default fetches games from the most recent complete month available.
+Downloads and extracts a 4GB chunk from the August 2025 Lichess database dump. The script downloads the compressed file and extracts a specific slice (starting at offset 15.5GB) after decompression.
 
 ### 2. Process games (`02_process_games.py`)
 
 Filters and processes raw PGN data into a SQLite database:
 
 - Filters for standard rated games (Blitz/Rapid/Classical time controls)
-- Excludes bullet games, variants, and incomplete games
-- Extracts positions with proper FEN normalization
-- Labels game phase (opening/middlegame/endgame) based on move number and material
-- Performs light Stockfish analysis to classify positions as tactical or quiet
+- Excludes bullet/ultrafast games, variants, and incomplete games
+- Stores game metadata (ELO ratings, time control, result)
+- Creates a searchable database for position selection
 
 ### 3. Select game positions (`03_select_games.py`)
 
 Selects 200 positions following the exact distribution requirements:
 
 - Stratified sampling across ELO ranges, game phases, and position types
+- Extracts positions from games and analyzes with Stockfish (depth 12)
+- Labels positions as tactical or quiet based on evaluation gaps
 - Ensures 50/50 color balance
 - Deduplicates positions to avoid repetition
 - Uses deterministic selection for reproducibility
 
 ### 4. Fetch puzzles (`04_fetch_puzzles.py`)
 
-Downloads the complete Lichess puzzle database (~1GB compressed):
+Downloads the complete Lichess puzzle database:
 
+- Downloads ~250MB compressed file (expands to ~1GB)
 - Contains millions of tactical puzzles from real games
-- Includes puzzle ratings and themes
+- Includes puzzle ratings, themes, and solutions
 - Pre-validated for having clear best moves
 
 ### 5. Select puzzles (`05_select_puzzles.py`)
 
 Randomly selects 50 puzzles matching the target distribution:
 
-- Filters for standard chess puzzles (no variants)
-- Stratifies by rating ranges
-- Balances game phases and colors
-- Validates puzzle solutions
+- 35 middlegame puzzles (70%)
+- 15 endgame puzzles (30%)
+- Filters based on puzzle themes
+- Uses random sampling with fixed seed for reproducibility
 
 ### 6. Create questions (`06_create_questions.py`)
 
 Evaluates all positions to create the final dataset:
 
-- Uses Stockfish at depth 25 for objective evaluation
-- Scores ALL legal moves for each position
-- Outputs in competition format with move evaluations
-- Creates both public and private test splits
+- Combines 200 game positions and 50 puzzles
+- Uses Stockfish at depth 25 for comprehensive evaluation
+- Analyzes ALL legal moves for each position (up to 500 moves with MultiPV)
+- Outputs JSON with move evaluations in centipawns
+- Creates public (first 50) and private (remaining 200) test splits
 
 ## Output files
 
 The pipeline generates the following files:
 
-- `output/games.pgn` - Raw Lichess game data
-- `output/games.db` - Processed games in SQLite format with metadata
-- `output/positions.csv` - 200 selected game positions with labels
-- `output/lichess_puzzles.csv` - Complete puzzle database
-- `output/puzzles.csv` - 50 selected puzzles
+- `output/games.pgn` - 4GB slice of Lichess game data in PGN format
+- `output/games.db` - SQLite database with filtered games and metadata
+- `output/positions.csv` - 200 selected game positions with ELO, phase, and type labels
+- `output/lichess_puzzles.csv` - Complete Lichess puzzle database (~1GB)
+- `output/puzzles.csv` - 50 selected puzzles with themes and solutions
 - `questions.csv` - Final competition dataset with the following columns:
   - `index`: Test case index (0-249)
   - `input`: Chess position in FEN notation
-  - `expected_output`: JSON object containing all legal moves with their evaluations
+  - `expected_output`: JSON object mapping each legal move (UCI format) to its evaluation in centipawns
   - `private`: "false" for first 50 positions (public), "true" for remaining 200 (private)
 
 ### Requirements
