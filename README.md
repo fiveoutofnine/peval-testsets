@@ -12,13 +12,13 @@ Currently, there is 1 type of competition:
 
 ## Competitions
 
-Each Peval Competition has a **public** test-set to score submissions while it's ongoing and a **private** test-set to score submissions after end.
-The following is a complete list of both test-set for each completed competition and the scripts used to generate them:
+Each Peval Competition has a **public** test set to score submissions while it's ongoing and a **private** test set to score submissions after end.
+The following is a complete list of both test set for each completed competition and the scripts used to generate them:
 
-| Name                   | Test-set                                                                                                          | README                                                                                   | Peval                                                        |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Structured Grid Output | [`questions.csv`](https://github.com/fiveoutofnine/peval-testsets/blob/main/structured-grid-output/questions.csv) | [Link](https://github.com/fiveoutofnine/peval-testsets/tree/main/structured-grid-output) | [Link↗](https://peval.io/competition/structured-grid-output) |
-| LLM Multiplication     | [`questions.csv`](https://github.com/fiveoutofnine/peval-testsets/blob/main/llm-multiplication/questions.csv)     | [Link](https://github.com/fiveoutofnine/peval-testsets/tree/main/llm-multiplication)     | [Link↗](https://peval.io/competition/llm-multiplication)     |
+| Name                                                                                                           | Test set                                                                                                          | Start        | End          | Peval                                                        |
+| -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------ | ------------ | ------------------------------------------------------------ |
+| [**Structured Grid Output**](https://github.com/fiveoutofnine/peval-testsets/tree/main/structured-grid-output) | [`questions.csv`](https://github.com/fiveoutofnine/peval-testsets/blob/main/structured-grid-output/questions.csv) | N/A          | N/A          | [Link↗](https://peval.io/competition/structured-grid-output) |
+| [**LLM Multiplication**](https://github.com/fiveoutofnine/peval-testsets/tree/main/llm-multiplication)         | [`questions.csv`](https://github.com/fiveoutofnine/peval-testsets/blob/main/llm-multiplication/questions.csv)     | `2024-09-01` | `2025-10-01` | [Link↗](https://peval.io/competition/llm-multiplication)     |
 
 ## Contribution
 
