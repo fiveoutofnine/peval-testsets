@@ -2,9 +2,9 @@
 
 [**Site**](https://peval.io) / [**𝕏**](https://x.com/fiveoutofnine)
 
-Peval is an AI eval platform that assesses models using optimized prompts across various tasks and scenarios.
+Peval is a competition and AI eval platform that benchmarks models using optimized prompts across various tasks and scenarios.
 There are [ongoing competitions](https://peval.io) anyone can compete in by writing prompts to be evaluated.
-As models improve and new techniques emerge, the prompts get more effective, which yields a benchmark that pushes models to their limits.
+As models and techniques improve, the prompts get more effective and push models to their limits.
 
 Currently, there is 1 type of competition:
 
