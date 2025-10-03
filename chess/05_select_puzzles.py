@@ -14,10 +14,10 @@ from typing import List, Dict
 PUZZLE_CSV = "output/lichess_puzzles.csv"
 OUTPUT_CSV = "output/puzzles.csv"
 
-# Target: 200 puzzles total with 70/30 middlegame/endgame split
-TOTAL_PUZZLES = 200
-MIDDLEGAME_TARGET = 140
-ENDGAME_TARGET = 60
+# Target: 50 puzzles total with 70/30 middlegame/endgame split
+TOTAL_PUZZLES = 50
+MIDDLEGAME_TARGET = 35
+ENDGAME_TARGET = 15
 
 
 def get_puzzle_phase(themes: str) -> str:

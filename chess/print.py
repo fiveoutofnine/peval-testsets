@@ -256,11 +256,11 @@ def main():
         print("\nPositions by ELO Bucket:")
         headers = ["ELO Range", "Selected", "Target", "Progress"]
         targets = {
-            "0-1400": 80,
-            "1400-1800": 200,
-            "1800-2200": 280,
-            "2200-2600": 160,
-            "2600+": 80,
+            "0-1400": 20,
+            "1400-1800": 50,
+            "1800-2200": 70,
+            "2200-2600": 40,
+            "2600+": 20,
         }
         rows = []
         for elo in ["0-1400", "1400-1800", "1800-2200", "2200-2600", "2600+"]:
@@ -303,7 +303,7 @@ def main():
 
         # Mate positions (if tracked)
         if "mate_positions" in pos_stats:
-            mate_cap = int(800 * 0.04)  # 4% of 800
+            mate_cap = int(200 * 0.04)  # 4% of 200
             mate_percentage = (
                 (pos_stats["mate_positions"] / pos_stats["total"] * 100)
                 if pos_stats["total"] > 0
@@ -337,7 +337,7 @@ def main():
         print("\nPuzzles by Phase:")
         headers = ["Phase", "Count", "Percentage", "Target"]
         rows = []
-        phase_targets = {"middlegame": 140, "endgame": 60}
+        phase_targets = {"middlegame": 35, "endgame": 15}
         for phase in ["middlegame", "endgame"]:
             count = puzzle_stats["by_phase"].get(phase, 0)
             percentage = (
@@ -403,13 +403,13 @@ def main():
     total_positions = game_positions + puzzle_positions
 
     print(
-        f"Game positions:   {game_positions:4d} / 800  ({game_positions / 800 * 100:5.1f}%)"
+        f"Game positions:   {game_positions:4d} / 200  ({game_positions / 200 * 100:5.1f}%)"
     )
     print(
-        f"Puzzle positions: {puzzle_positions:4d} / 200  ({puzzle_positions / 200 * 100:5.1f}%)"
+        f"Puzzle positions: {puzzle_positions:4d} / 50  ({puzzle_positions / 50 * 100:5.1f}%)"
     )
     print(
-        f"Total positions:  {total_positions:4d} / 1000 ({total_positions / 1000 * 100:5.1f}%)"
+        f"Total positions:  {total_positions:4d} / 250 ({total_positions / 250 * 100:5.1f}%)"
     )
 
     print("\n" + "=" * 60)

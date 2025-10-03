@@ -19,8 +19,8 @@ STOCKFISH_PATH = "stockfish"
 
 # Engine settings - can be adjusted for testing
 ENGINE_CONFIG = {
-    "depth": 20,  # Search depth
-    "time_limit": 2.0,  # Time limit per position in seconds
+    "depth": 25,  # Search depth
+    "time_limit": 4.0,  # Time limit per position in seconds
     "multipv": 500,  # Max number of lines to analyze (set high to get all moves)
     "threads": 1,  # Number of threads
     "hash": 512,  # Hash table size in MB
