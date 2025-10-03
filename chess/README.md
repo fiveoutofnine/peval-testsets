@@ -4,305 +4,145 @@
 
 ## Test-set design
 
-To get a comprehensive evaluation of an LLM&apos;s chess ability, the test-set selects 800 random positions from the most recent month in [Lichess&apos;s Open Database](https://database.lichess.org) game data and 200 random puzzles with the following distribution:
+The test-set evaluates LLMs' chess playing ability across a comprehensive range of positions, combining 800 real game positions from [Lichess Open Database](https://database.lichess.org) and 200 tactical puzzles. The dataset is strategically balanced across:
 
-```
-All (1000)
-|-- Games (800)
-|   |-- (0, 1400) ELO (40)
-|   |   |-- Opening (8)
-|   |   |   |-- Tactical (2)
-|   |   |   |   |-- White (1)
-|   |   |   |   `-- Black (1)
-|   |   |   `-- Quiet (6)
-|   |   |       |-- White (3)
-|   |   |       `-- Black (3)
-|   |   |-- Middlegame (24)
-|   |   |   |-- Tactical (7)
-|   |   |   |   |-- White (4)
-|   |   |   |   `-- Black (3)
-|   |   |   `-- Quiet (17)
-|   |   |       |-- White (8)
-|   |   |       `-- Black (9)
-|   |   `-- Endgame (8)
-|   |       |-- Tactical (3)
-|   |       |   |-- White (1)
-|   |       |   `-- Black (2)
-|   |       `-- Quiet (5)
-|   |           |-- White (2)
-|   |           `-- Black (3)
-|   |-- [1400, 1800) ELO (160)
-|   |   |-- Opening (32)
-|   |   |   |-- Tactical (9)
-|   |   |   |   |-- White (5)
-|   |   |   |   `-- Black (4)
-|   |   |   `-- Quiet (23)
-|   |   |       |-- White (11)
-|   |   |       `-- Black (12)
-|   |   |-- Middlegame (96)
-|   |   |   |-- Tactical (28)
-|   |   |   |   |-- White (14)
-|   |   |   |   `-- Black (14)
-|   |   |   `-- Quiet (68)
-|   |   |       |-- White (34)
-|   |   |       `-- Black (34)
-|   |   `-- Endgame (32)
-|   |       |-- Tactical (9)
-|   |       |   |-- White (5)
-|   |       |   `-- Black (4)
-|   |       `-- Quiet (23)
-|   |           |-- White (12)
-|   |           `-- Black (11)
-|   |-- [1800, 2200) ELO (280)
-|   |   |-- Opening (56)
-|   |   |   |-- Tactical (16)
-|   |   |   |   |-- White (8)
-|   |   |   |   `-- Black (8)
-|   |   |   `-- Quiet (40)
-|   |   |       |-- White (20)
-|   |   |       `-- Black (20)
-|   |   |-- Middlegame (168)
-|   |   |   |-- Tactical (48)
-|   |   |   |   |-- White (24)
-|   |   |   |   `-- Black (24)
-|   |   |   `-- Quiet (120)
-|   |   |       |-- White (60)
-|   |   |       `-- Black (60)
-|   |   `-- Endgame (56)
-|   |       |-- Tactical (16)
-|   |       |   |-- White (8)
-|   |       |   `-- Black (8)
-|   |       `-- Quiet (40)
-|   |           |-- White (20)
-|   |           `-- Black (20)
-|   |-- [2200, 2600) ELO (200)
-|   |   |-- Opening (40)
-|   |   |   |-- Tactical (11)
-|   |   |   |   |-- White (6)
-|   |   |   |   `-- Black (5)
-|   |   |   `-- Quiet (29)
-|   |   |       |-- White (15)
-|   |   |       `-- Black (14)
-|   |   |-- Middlegame (120)
-|   |   |   |-- Tactical (34)
-|   |   |   |   |-- White (17)
-|   |   |   |   `-- Black (17)
-|   |   |   `-- Quiet (86)
-|   |   |       |-- White (43)
-|   |   |       `-- Black (43)
-|   |   `-- Endgame (40)
-|   |       |-- Tactical (11)
-|   |       |   |-- White (6)
-|   |       |   `-- Black (5)
-|   |       `-- Quiet (29)
-|   |           |-- White (14)
-|   |           `-- Black (15)
-|   `-- [2600, ∞) ELO (120)
-|       |-- Opening (24)
-|       |   |-- Tactical (7)
-|       |   |   |-- White (3)
-|       |   |   `-- Black (4)
-|       |   `-- Quiet (17)
-|       |       |-- White (9)
-|       |       `-- Black (8)
-|       |-- Middlegame (72)
-|       |   |-- Tactical (21)
-|       |   |   |-- White (11)
-|       |   |   `-- Black (10)
-|       |   `-- Quiet (51)
-|       |       |-- White (25)
-|       |       `-- Black (26)
-|       `-- Endgame (24)
-|           |-- Tactical (7)
-|           |   |-- White (4)
-|           |   `-- Black (3)
-|           `-- Quiet (17)
-|               |-- White (9)
-|               `-- Black (8)
-`-- Puzzles (200)
-    |-- (0, 1400) ELO (10)
-    |   |-- Opening (2)
-    |   |   |-- Tactical (2)
-    |   |   |   |-- White (1)
-    |   |   |   `-- Black (1)
-    |   |   `-- Quiet (0)
-    |   |       |-- White (0)
-    |   |       `-- Black (0)
-    |   |-- Middlegame (6)
-    |   |   |-- Tactical (5)
-    |   |   |   |-- White (3)
-    |   |   |   `-- Black (2)
-    |   |   `-- Quiet (1)
-    |   |       |-- White (1)
-    |   |       `-- Black (0)
-    |   `-- Endgame (2)
-    |       |-- Tactical (2)
-    |       |   |-- White (1)
-    |       |   `-- Black (1)
-    |       `-- Quiet (0)
-    |           |-- White (0)
-    |           `-- Black (0)
-    |-- [1400, 1800) ELO (40)
-    |   |-- Opening (8)
-    |   |   |-- Tactical (7)
-    |   |   |   |-- White (4)
-    |   |   |   `-- Black (3)
-    |   |   `-- Quiet (1)
-    |   |       |-- White (1)
-    |   |       `-- Black (0)
-    |   |-- Middlegame (24)
-    |   |   |-- Tactical (20)
-    |   |   |   |-- White (10)
-    |   |   |   `-- Black (10)
-    |   |   `-- Quiet (4)
-    |   |       |-- White (2)
-    |   |       `-- Black (2)
-    |   `-- Endgame (8)
-    |       |-- Tactical (7)
-    |       |   |-- White (3)
-    |       |   `-- Black (4)
-    |       `-- Quiet (1)
-    |           |-- White (1)
-    |           `-- Black (0)
-    |-- [1800, 2200) ELO (70)
-    |   |-- Opening (14)
-    |   |   |-- Tactical (12)
-    |   |   |   |-- White (6)
-    |   |   |   `-- Black (6)
-    |   |   `-- Quiet (2)
-    |   |       |-- White (1)
-    |   |       `-- Black (1)
-    |   |-- Middlegame (42)
-    |   |   |-- Tactical (36)
-    |   |   |   |-- White (18)
-    |   |   |   `-- Black (18)
-    |   |   `-- Quiet (6)
-    |   |       |-- White (3)
-    |   |       `-- Black (3)
-    |   `-- Endgame (14)
-    |       |-- Tactical (12)
-    |       |   |-- White (6)
-    |       |   `-- Black (6)
-    |       `-- Quiet (2)
-    |           |-- White (1)
-    |           `-- Black (1)
-    |-- [2200, 2600) ELO (50)
-    |   |-- Opening (10)
-    |   |   |-- Tactical (9)
-    |   |   |   |-- White (5)
-    |   |   |   `-- Black (4)
-    |   |   `-- Quiet (1)
-    |   |       |-- White (1)
-    |   |       `-- Black (0)
-    |   |-- Middlegame (30)
-    |   |   |-- Tactical (26)
-    |   |   |   |-- White (13)
-    |   |   |   `-- Black (13)
-    |   |   `-- Quiet (4)
-    |   |       |-- White (2)
-    |   |       `-- Black (2)
-    |   `-- Endgame (10)
-    |       |-- Tactical (9)
-    |       |   |-- White (4)
-    |       |   `-- Black (5)
-    |       `-- Quiet (1)
-    |           |-- White (1)
-    |           `-- Black (0)
-    `-- [2600, ∞) ELO (30)
-        |-- Opening (6)
-        |   |-- Tactical (5)
-        |   |   |-- White (3)
-        |   |   `-- Black (2)
-        |   `-- Quiet (1)
-        |       |-- White (0)
-        |       `-- Black (1)
-        |-- Middlegame (18)
-        |   |-- Tactical (15)
-        |   |   |-- White (8)
-        |   |   `-- Black (7)
-        |   `-- Quiet (3)
-        |       |-- White (2)
-        |       `-- Black (1)
-        `-- Endgame (6)
-            |-- Tactical (5)
-            |   |-- White (2)
-            |   `-- Black (3)
-            `-- Quiet (1)
-                |-- White (0)
-                `-- Black (1)
-```
+- **ELO ranges**: From beginner (<1400) to super-GM (>2600) level positions
+- **Game phases**: Opening (20%), Middlegame (60%), and Endgame (20%)
+- **Position types**: Tactical (requiring precise calculation) and Quiet (positional understanding)
+- **Colors**: Equal distribution between White and Black to move
+- **Complexity**: From simple 1-move tactics to deep positional evaluations
 
-### Filters & labeling (copy/paste checklist)
+### Distribution breakdown
 
-**Game-level (PGNs)**
+The 1000 test cases follow this precise distribution:
 
-- Keep: **Standard**, **rated**; time control = **Blitz/Rapid/Classical**.
-- Drop: **Bullet/Ultrabullet**, variants (Chess960, etc.), corrupt/partial PGNs, missing ratings.
-- Sample **≤1 position per game** (use reservoir sampling over eligible plies).
+- **800 Game Positions**: Sampled from real games with the following ELO distribution:
+  - 40 positions from <1400 ELO games (beginner level)
+  - 160 positions from 1400-1800 ELO games (intermediate level)
+  - 280 positions from 1800-2200 ELO games (advanced level)
+  - 200 positions from 2200-2600 ELO games (master level)
+  - 120 positions from >2600 ELO games (super-GM level)
 
-**Position-level (from games)**
+- **200 Puzzle Positions**: Tactical puzzles with guaranteed best moves:
+  - 10 puzzles rated <1400 (beginner tactics)
+  - 40 puzzles rated 1400-1800 (intermediate tactics)
+  - 70 puzzles rated 1800-2200 (advanced tactics)
+  - 50 puzzles rated 2200-2600 (master tactics)
+  - 30 puzzles rated >2600 (super-GM tactics)
 
-- Must be **legal & non-terminal** (not mate/stalemate; ≥1 legal move).
-- **Halfmove clock < 80** (avoid 50-move rule artifacts).
-- **Normalize en passant**: only set EP if an EP capture is actually legal; else `-`.
-- **Canonicalize FEN**: store first 4 fields (`pieces turn castling ep`).
-- **Phase detection** (heuristic):
-  Opening = ply ≤ 20 & queens present & non-king material ≥ 26;
-  Endgame = non-king material ≤ 14; otherwise Middlegame.
-- **Deduplicate & split**: `pos_id = SHA256(SALT || fen4)`; `hash_bucket = int(SHA256(fen4)[:8],16)%100` → preview vs hidden.
-- Record: **side to move** (W/B), **avg ELO** bucket, legal move count, castling rights, etc.
+Each position is evaluated using Stockfish (depth 25) to provide objective scores for all legal moves, enabling precise measurement of move quality.
 
-**Tactical vs Quiet labeling (light engine probe)**
+## Generating
 
-- Probe with Stockfish **depth ≈ 12**, `MultiPV=3–5`.
-- Let `gap = eval(top1) − eval(top2)` (centipawns, POV side-to-move); `good_move_count` = # moves within **≤50 cp** of best.
-- **Tactical if any**: mate in PV1, or `gap ≥ 100 cp` (opening/mid) / `≥ 60 cp` (end), or PV1 is check/capture with **SEE ≥ +100 cp**, or `good_move_count ≤ 2`.
-- **Quiet if all**: `gap ≤ 30 cp` (opening/mid) / `≤ 20 cp` (end) **and** PV1 not check/capture **and** `good_move_count ≥ 3`.
-
-**Puzzle-level (Lichess puzzles CSV)**
-
-- Keep: Standard puzzles; verify first move is **best** (or wins by **≥100 cp**) at your **grading** depth.
-- Drop: malformed FEN, variants, **near-ties** at grading depth, severely overrepresented single motifs.
-- Default label: **tactical**; cap **mate** content to ≤4% of all cases.
-
-**Randomness & reproducibility**
-
-- Salted IDs for splits (`SALT`), and a separate `SELECT_SEED` (or precomputed `rand_key`) for deterministic shuffles—**avoid** `ORDER BY RANDOM()`.
-- **50/50 color** and distribution totals enforced at selection time (as shown above).
-
-If you want, I can patch your canvas script to (a) add a deterministic `rand_key` column and (b) emit this exact slice (SQL) so you can regenerate the same tree on demand.
-
-## Pipeline
-
-The chess position selection pipeline consists of 6 steps:
-
-1. **01_fetch_games.py** - Downloads a chunk of Lichess game data
-2. **02_process_games.py** - Filters and processes games into a SQLite database
-3. **03_select_games.py** - Selects 800 positions from games based on ELO, phase, and type distribution
-4. **04_fetch_puzzles.py** - Downloads the Lichess puzzle database (~1GB uncompressed)
-5. **05_select_puzzles.py** - Randomly selects 200 puzzles (70% middlegame, 30% endgame)
-6. **06_create_questions.py** - Evaluates all legal moves for both game positions and puzzles using Stockfish
-
-### Running the Pipeline
+To generate an equivalent sample test-set, run the complete pipeline:
 
 ```bash
-# Run the entire pipeline (skips completed steps)
+python generate.py [options]
+```
+
+### Options
+
+- `--force`: Force re-run all pipeline steps even if outputs exist
+- `--skip-eval`: Skip the Stockfish evaluation step (useful for testing)
+
+### Examples
+
+```bash
+# Run the complete pipeline (skips completed steps)
 python generate.py
 
-# Force re-run all steps
+# Force regenerate everything from scratch
 python generate.py --force
 
-# Skip the evaluation step (useful for testing)
+# Generate positions without evaluation (faster for testing)
 python generate.py --skip-eval
 
-# Show detailed statistics
+# View detailed statistics about the generated dataset
 python print.py
 ```
 
-The pipeline will produce:
-- `output/games.pgn` - Raw game data from Lichess
-- `output/games.db` - Filtered games in SQLite format
-- `output/positions.csv` - 800 selected game positions
-- `output/lichess_puzzles.csv` - Full Lichess puzzle database
+## Pipeline details
+
+The generation pipeline consists of 6 sequential steps:
+
+### 1. Fetch games (`01_fetch_games.py`)
+Downloads recent Lichess game data in PGN format. By default fetches games from the most recent complete month available.
+
+### 2. Process games (`02_process_games.py`)
+Filters and processes raw PGN data into a SQLite database:
+- Filters for standard rated games (Blitz/Rapid/Classical time controls)
+- Excludes bullet games, variants, and incomplete games
+- Extracts positions with proper FEN normalization
+- Labels game phase (opening/middlegame/endgame) based on move number and material
+- Performs light Stockfish analysis to classify positions as tactical or quiet
+
+### 3. Select game positions (`03_select_games.py`)
+Selects 800 positions following the exact distribution requirements:
+- Stratified sampling across ELO ranges, game phases, and position types
+- Ensures 50/50 color balance
+- Deduplicates positions to avoid repetition
+- Uses deterministic selection for reproducibility
+
+### 4. Fetch puzzles (`04_fetch_puzzles.py`)
+Downloads the complete Lichess puzzle database (~1GB compressed):
+- Contains millions of tactical puzzles from real games
+- Includes puzzle ratings and themes
+- Pre-validated for having clear best moves
+
+### 5. Select puzzles (`05_select_puzzles.py`)
+Randomly selects 200 puzzles matching the target distribution:
+- Filters for standard chess puzzles (no variants)
+- Stratifies by rating ranges
+- Balances game phases and colors
+- Validates puzzle solutions
+
+### 6. Create questions (`06_create_questions.py`)
+Evaluates all positions to create the final dataset:
+- Uses Stockfish at depth 25 for objective evaluation
+- Scores ALL legal moves for each position
+- Outputs in competition format with move evaluations
+- Creates both public and private test splits
+
+## Output files
+
+The pipeline generates the following files:
+
+- `output/games.pgn` - Raw Lichess game data
+- `output/games.db` - Processed games in SQLite format with metadata
+- `output/positions.csv` - 800 selected game positions with labels
+- `output/lichess_puzzles.csv` - Complete puzzle database
 - `output/puzzles.csv` - 200 selected puzzles
-- `questions.csv` - Final dataset with all 1000 positions and their move evaluations
+- `questions.csv` - Final competition dataset with the following columns:
+  - `index`: Test case index (0-999)
+  - `input`: Chess position in FEN notation
+  - `expected_output`: JSON object containing all legal moves with their evaluations
+  - `private`: "false" for first 100 positions (public), "true" for remaining 900 (private)
+
+## Requirements
+
+- Python 3.8+
+- Stockfish chess engine (install via package manager or download from [stockfishchess.org](https://stockfishchess.org))
+- ~2GB free disk space for puzzle database
+- Dependencies (install via `pip install -r requirements.txt`):
+  - `python-chess`: Chess library for move generation and board manipulation
+  - `requests`: For downloading Lichess data
+  - `tqdm`: Progress bars for long-running operations
+
+## Technical notes
+
+### Position selection criteria
+
+- **Legal & non-terminal**: All positions must have at least one legal move
+- **Halfmove clock < 80**: Avoids positions close to 50-move rule draws
+- **En passant normalization**: Only includes en passant square when capture is actually possible
+- **Canonical FEN**: Uses first 4 fields only (pieces, turn, castling, en passant)
+
+### Tactical vs Quiet classification
+
+Positions are classified using Stockfish analysis (depth ~12):
+- **Tactical**: Positions with forcing moves, large evaluation gaps between best and second-best moves, or positions requiring precise calculation
+- **Quiet**: Positions with multiple reasonable moves, small evaluation differences, requiring positional understanding
+
+### Reproducibility
+
+The pipeline uses deterministic selection with fixed random seeds to ensure reproducible dataset generation. The exact same 1000 positions can be regenerated by running the pipeline with the same input data.
