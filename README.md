@@ -2,9 +2,9 @@
 
 [**Site**](https://peval.io) / [**𝕏**](https://x.com/fiveoutofnine)
 
-Peval is an AI eval platform that assesses models using optimized prompts across various tasks and scenarios.
+Peval is a competition and AI eval platform that benchmarks models using optimized prompts across various tasks and scenarios.
 There are [ongoing competitions](https://peval.io) anyone can compete in by writing prompts to be evaluated.
-As models improve and new techniques emerge, the prompts get more effective, which yields a benchmark that pushes models to their limits.
+As models and techniques improve, the prompts get more effective and push models to their limits.
 
 Currently, there is 1 type of competition:
 
@@ -12,13 +12,14 @@ Currently, there is 1 type of competition:
 
 ## Competitions
 
-Each Peval Competition has a **public** test-set to score submissions while it's ongoing and a **private** test-set to score submissions after end.
-The following is a complete list of both test-set for each completed competition and the scripts used to generate them:
+Each Peval Competition has a **public** test set to score submissions while it's ongoing and a **private** test set to score submissions after end.
+The following is a complete list of both test set for each completed competition and the scripts used to generate them:
 
-| Name                   | Test-set                                                                                                          | README                                                                                   | Peval                                                        |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Structured Grid Output | [`questions.csv`](https://github.com/fiveoutofnine/peval-testsets/blob/main/structured-grid-output/questions.csv) | [Link](https://github.com/fiveoutofnine/peval-testsets/tree/main/structured-grid-output) | [Link↗](https://peval.io/competition/structured-grid-output) |
-| LLM Multiplication     | [`questions.csv`](https://github.com/fiveoutofnine/peval-testsets/blob/main/llm-multiplication/questions.csv)     | [Link](https://github.com/fiveoutofnine/peval-testsets/tree/main/llm-multiplication)     | [Link↗](https://peval.io/competition/llm-multiplication)     |
+| Name                                                                                                           | Test set                                                                                                          | Start        | End          | Peval                                                        |
+| -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------ | ------------ | ------------------------------------------------------------ |
+| [**Structured Grid Output**](https://github.com/fiveoutofnine/peval-testsets/tree/main/structured-grid-output) | [`questions.csv`](https://github.com/fiveoutofnine/peval-testsets/blob/main/structured-grid-output/questions.csv) | N/A          | N/A          | [Link↗](https://peval.io/competition/structured-grid-output) |
+| [**LLM Multiplication**](https://github.com/fiveoutofnine/peval-testsets/tree/main/llm-multiplication)         | [`questions.csv`](https://github.com/fiveoutofnine/peval-testsets/blob/main/llm-multiplication/questions.csv)     | `2025-09-01` | `2025-10-01` | [Link↗](https://peval.io/competition/llm-multiplication)     |
+| [**Chess**](https://github.com/fiveoutofnine/peval-testsets/tree/main/chess)                                   | [`questions.csv`](https://github.com/fiveoutofnine/peval-testsets/blob/main/chess/questions.csv)                  | `2025-09-01` | `2025-10-01` | [Link↗](https://peval.io/competition/chess)                  |
 
 ## Contribution
 
